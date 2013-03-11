@@ -6,7 +6,7 @@ With LineUp you can enqueue Resque jobs in arbitrary Redis namespaces.
 
 * The Set is usually located at `resque:queues` and contains a list of (lower-cased, underscored) Strings, each representing a queue name
 * Each queue is a List located at `resque:queue:my_job` (with `my_job` as queue name for `MyJob`-jobs in this example)
-* Each job inside of a queue is a JSON or Marshal'ed Hash with the keys `class` and `args`, for example `{ class: 'MyJob', args: [123, some: thing] }.to_json'`
+* Each job inside of a queue is a JSON or Marshal'ed Hash with the keys `class` and `args`, for example `{ class: 'MyJob', args: [123, some: thing] }.to_json`
 
 Depending on how you configure the Redis backend for Resque, you will end up in a different namespace:
 
@@ -21,7 +21,7 @@ That's where LineUp comes in, it doesn't even need Resque. It goes right into Re
 
 # Examples
 
-#### Setup
+### Setup
 
 If you use `Raidis`, you _do not need_ any setup. Otherwise, a manual setup would look like this:
 
@@ -32,14 +32,20 @@ Resque.redis = redis
 LineUp.redis = redis
 ````
 
-#### Usage
+### Usage
 
 With the setup above, Resque lies in the `myapp:resque`-namespace. So you can enqeueue jobs to the very same application by using `Resque.enqueue(...)`.
 
 This is how you can enqueue a job for another applications:
 
 ```ruby
-LineUp.push :otherApp, :SomeJob, 12345, some: thing
+if LineUp.push :otherApp, :SomeJob, 12345, some: thing
+# Yey, everything went well
+else
+# If I have the "Trouble"-gem, it has been notified and I can process the failure
+end
 ```
+
+If you don't have `Trouble` and anything goes wrong, an exception will be raised instead of returning `false` or `true`.
 
 This will enqueue to `other_app:resque:some_job` with arguments `[12345, { 'some' => 'thing' }]` and make sure that the `other_app:resque:queues` Set references the queue List.
