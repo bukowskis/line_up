@@ -9,9 +9,10 @@ GIT
 PATH
   remote: .
   specs:
-    line_up (0.0.1)
+    line_up (0.0.2)
       multi_json
       redis-namespace
+      trouble
 
 GEM
   remote: http://rubygems.org/
@@ -48,6 +49,7 @@ GEM
     slop (3.4.3)
     terminal-table (1.4.5)
     thor (0.17.0)
+    trouble (0.0.6)
 
 PLATFORMS
   ruby

@@ -16,7 +16,7 @@ module LineUp
     end
 
     def queue_name
-      klass.to_s.underscore
+      StringExtensions.underscore(klass)
     end
 
   end

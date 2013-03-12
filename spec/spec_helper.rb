@@ -23,19 +23,18 @@ def ensure_class(name)
   ensure_class_or_module(name, :class)
 end
 
-ensure_module :Trouble
-
 RSpec.configure do |config|
 
   config.before do
-    Trouble.stub!(:notify)
     $raw_redis = Redis.new(db: 14)
-    LineUp.redis = Redis::Namespace.new :myapp, redis: $raw_redis
+    LineUp.config.redis = Redis::Namespace.new :myapp, redis: $raw_redis
+    LineUp.config.logger = nil
+    Trouble.stub!(:notify)
   end
 
   config.after do
     $raw_redis.flushdb
-    LineUp.redis = nil
+    LineUp.reset!
   end
 
 end

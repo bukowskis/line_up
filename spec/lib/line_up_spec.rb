@@ -6,23 +6,41 @@ describe LineUp do
   let(:job)         { :SendEmail }
   let(:args)        { [123, some: :thing] }
   let(:redis)       { $raw_redis }
+  let(:logger)      { mock(:logger) }
 
   let(:lineup) { LineUp }
 
   describe '.push' do
-    context 'under normal conditions' do
+    it 'returns true if successful' do
+      lineup.push(application, job, *args).should be_true
+    end
+
+    it 'registers the queue' do
+      lineup.push application, job, *args
+      queues = redis.smembers('other_app:resque:queues').should == %w{ send_email }
+    end
+
+    it 'enqueues the job' do
+      lineup.push application, job, *args
+      jobs = redis.lrange('other_app:resque:queue:send_email', 0, -1)
+      jobs.size.should == 1
+      MultiJson.load(jobs.first).should == { 'class' => 'SendEmail', 'args' => [123, 'some' => 'thing'] }
+    end
+
+    context 'with a Logger' do
       before do
-        lineup.push application, job, *args
+        lineup.config.logger = logger
       end
 
-      it 'registers the queue' do
-        queues = redis.smembers('other_app:resque:queues').should == %w{ send_email }
-      end
-
-      it 'enqueues the job' do
-        jobs = redis.lrange('other_app:resque:queue:send_email', 0, -1)
-        jobs.size.should == 1
-        JSON.load(jobs.first).should == { 'class' => 'SendEmail', 'args' => [123, 'some' => 'thing'] }
+      it 'logs the enqueueing and returns true' do
+        logger.should_receive(:debug) do |string|
+          string.should include('LINEUP ENQUEUED')
+          string.should include('line_up_spec.rb')
+          string.should include(':otherApp')
+          string.should include(':SendEmail')
+          string.should include('[123, {:some=>:thing}]')
+        end
+        lineup.push(application, job, *args).should be_true
       end
     end
 
@@ -38,6 +56,7 @@ describe LineUp do
           metadata[:application].should == ':otherApp'
           metadata[:job].should == ':SendEmail'
           metadata[:args].should == '[123, {:some=>:thing}]'
+          metadata[:caller].should include('line_up_spec.rb')
         end
         lineup.push(application, job, *args).should be_false
       end
@@ -55,44 +74,33 @@ describe LineUp do
           metadata[:application].should == ':otherApp'
           metadata[:job].should == ':SendEmail'
           metadata[:args].should == '[123, {:some=>:thing}]'
+          metadata[:caller].should include('line_up_spec.rb')
         end
         lineup.push(application, job, *args).should be_false
       end
     end
-
-    context 'when Redis has never been configured' do
-      before do
-        LineUp.redis = nil
-      end
-
-      it 'catches the error and returns false' do
-        Trouble.should_receive(:notify) do |exception, metadata|
-          exception.should be_instance_of Redis::CannotConnectError
-          metadata[:code].should == :enqueue_failed
-          metadata[:application].should == ':otherApp'
-          metadata[:job].should == ':SendEmail'
-          metadata[:args].should == '[123, {:some=>:thing}]'
-        end
-        lineup.push(application, job, *args).should be_false
-      end
-    end
-
-    context 'when Redis is unavailable' do
-      before do
-        LineUp.redis = Redis.new(host: '192.0.2.1', timeout: 0.1)  # RFC 5737
-      end
-
-      it 'catches the error and returns false' do
-        Trouble.should_receive(:notify) do |exception, metadata|
-          exception.should be_instance_of Redis::CannotConnectError
-          metadata[:code].should == :enqueue_failed
-          metadata[:application].should == ':otherApp'
-          metadata[:job].should == ':SendEmail'
-          metadata[:args].should == '[123, {:some=>:thing}]'
-        end
-        lineup.push(application, job, *args).should be_false
-      end
-    end
-
   end
+
+  describe '.config' do
+    before do
+      LineUp.reset!
+    end
+
+    it 'is an STDOUT logger' do
+      Logger.should_receive(:new).with(STDOUT).and_return logger
+      lineup.config.logger.should be logger
+    end
+
+    context 'with Rails' do
+      before do
+        ensure_module :Rails
+        Rails.stub!(:logger).and_return(logger)
+      end
+
+      it 'is the Rails logger' do
+        lineup.config.logger.should be Rails.logger
+      end
+    end
+  end
+
 end

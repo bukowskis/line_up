@@ -15,7 +15,7 @@ Depending on how you configure the Redis backend for Resque, you will end up in 
 
 If you use multiple applications, you should make sure that each of them has its own namespace. You would normally achieve that with `Resque.redis = Redis::Namespace.new('myapp:resque', ...)` so that the queue Set would be located at `myapp:resque:queues`.
 
-So far so good, __but__ there is no way to enqueue a Job for an application inside another namespace, say `otherapp:resque:queues`, without maintaining an additional connection to redis in the other app's namespace. So far, the only solution has been to share the `resque:queues` namespace between all applications and have separate queue-names, such as `myapp-myjob` and `otherapp-myjob`, but that is not really separating namespaces.
+So far so good, __but__ there is no way to enqueue a Job for an application from inside another namespace, say `otherapp:resque:queues`, without maintaining an additional connection to Redis in the other app's namespace. So far, the only solution has been to share the `resque:queues` namespace between all applications and have separate queue-names, such as `myapp-myjob` and `otherapp-myjob`, but that is not really separating namespaces.
 
 That's where LineUp comes in, it doesn't even need Resque. It goes right into Redis (scary huh?), just as Resque does [internally](https://github.com/defunkt/resque/blob/master/lib/resque/queue.rb).
 
@@ -23,7 +23,7 @@ That's where LineUp comes in, it doesn't even need Resque. It goes right into Re
 
 ### Setup
 
-If you use `Raidis`, you _do not need_ any setup. Otherwise, a manual setup would look like this:
+If you use the `Raidis` gem, you _do not need_ any setup. Otherwise, a manual setup would look like this:
 
 ```ruby
 redis = Redis::Namespace.new 'myapp:resque', redis: Redis.new(...)
@@ -42,10 +42,14 @@ This is how you can enqueue a job for another applications:
 if LineUp.push :otherApp, :SomeJob, 12345, some: thing
 # Yey, everything went well
 else
-# If I have the "Trouble"-gem, it has been notified and I can process the failure
+# The "Trouble"-gem, has been notified and I can process the failure if I like
 end
 ```
 
-If you don't have `Trouble` and anything goes wrong, an exception will be raised instead of returning `false` or `true`.
-
 This will enqueue to `other_app:resque:some_job` with arguments `[12345, { 'some' => 'thing' }]` and make sure that the `other_app:resque:queues` Set references the queue List.
+
+# Gotchas
+
+* `Resque.redis` MUST respond to a method called `#namespace` which takes a block and yields a new namespace. See [this commit](https://github.com/defunkt/redis-namespace/pull/50). Currently LineUp [requires a non-rubygems fork](https://github.com/bukowskis/line_up/blob/master/Gemfile) of `Redis::Namespace` in order to be able to use this cutting-edge method.
+* Currently the jobs are encoded using `MultiJson` only, not `Marshal`, feel free to commit a patch if you need the latter
+* You cannot share the `resque` root namespace. LineUp defaults to the `application:resque` namespace (because that's the only scenario I can think of that would make you want to use LineUp in the first place :)
