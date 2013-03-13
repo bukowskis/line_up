@@ -27,12 +27,7 @@ module LineUp
 
   def self.log(caller, application, jobclass, *args)
     return unless config.logger
-    rows = ['LINEUP ENQUEUED A JOB']
-    rows << "   | Location:    #{caller.first}"
-    rows << "   | Application: #{application.inspect}"
-    rows << "   | Job Class:   #{jobclass.inspect}"
-    rows << "   \\ Arguments:  #{args.inspect}\n"
-    config.logger.debug rows.join("\n")
+    config.logger.debug "LINEUP ENQUEUED JOB #{jobclass.inspect} for #{application.inspect} at #{caller.first} with arguments #{args.inspect}"
   end
 
 end
