@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/bukowskis/line_up.png)](https://travis-ci.org/bukowskis/line_up)
+
 # LineUp
 
 With LineUp you can enqueue Resque jobs in arbitrary Redis namespaces.
