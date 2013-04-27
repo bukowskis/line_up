@@ -22,6 +22,10 @@ describe LineUp do
         Rails.stub!(:logger).and_return(logger)
       end
 
+      after do
+        Object.send(:remove_const, :Rails)
+      end
+
       it 'is the Rails logger' do
         lineup.config.logger.should be Rails.logger
       end
