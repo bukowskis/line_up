@@ -19,6 +19,17 @@ module LineUp
     false
   end
 
+
+  def self.queue_length(application, jobclass)
+    redis_for application do |r|
+      job = Job.new jobclass
+      return r.llen "queue:#{job.queue_name}"
+    end
+  rescue Exception => e
+    Trouble.notify e, caller: caller[1], message: "LineUp could not get the queue length", code: :getting_queue_length_failed, redis: config.redis.inspect, application: application.inspect, job: jobclass.inspect
+    false
+  end
+
   private
 
   def self.redis_for(application, &block)

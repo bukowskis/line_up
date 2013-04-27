@@ -103,4 +103,33 @@ describe LineUp do
     end
   end
 
+  describe ".queue_length" do
+    
+    it "returns the length of the given queue in the given application" do
+      lineup.push(application, job, 1)
+      lineup.push(application, job, 2)
+      lineup.queue_length(application, job).should == 2
+    end
+
+    context 'when the key for the List Job Queue is occupied by the wrong data format' do
+      before do
+        redis.set 'other_app:resque:queue:send_email', :anything_but_a_list
+      end
+
+      it 'logs the error' do
+        Trouble.should_receive(:notify) do |exception, metadata|
+          exception.should be_instance_of Redis::CommandError
+          metadata[:code].should == :getting_queue_length_failed
+          metadata[:application].should == ':otherApp'
+          metadata[:job].should == ':SendEmail'
+          metadata[:caller].should include('line_up_spec.rb')
+        end
+        lineup.queue_length(application, job)
+      end
+
+      it "returns false" do
+        lineup.queue_length(application, job).should be_false
+      end
+    end
+  end
 end
