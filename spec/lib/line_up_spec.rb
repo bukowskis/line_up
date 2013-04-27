@@ -81,28 +81,6 @@ describe LineUp do
     end
   end
 
-  describe '.config' do
-    before do
-      LineUp.reset!
-    end
-
-    it 'is an STDOUT logger' do
-      Logger.should_receive(:new).with(STDOUT).and_return logger
-      lineup.config.logger.should be logger
-    end
-
-    context 'with Rails' do
-      before do
-        ensure_module :Rails
-        Rails.stub!(:logger).and_return(logger)
-      end
-
-      it 'is the Rails logger' do
-        lineup.config.logger.should be Rails.logger
-      end
-    end
-  end
-
   describe ".queue_length" do
     
     it "returns the length of the given queue in the given application" do
@@ -144,6 +122,28 @@ describe LineUp do
       lineup.push application, job, *args
       lineup.should_not_receive(:push)
       lineup.ensure application, job, *args
+    end
+  end
+
+  describe '.config' do
+    before do
+      LineUp.reset!
+    end
+
+    it 'is an STDOUT logger' do
+      Logger.should_receive(:new).with(STDOUT).and_return logger
+      lineup.config.logger.should be logger
+    end
+
+    context 'with Rails' do
+      before do
+        ensure_module :Rails
+        Rails.stub!(:logger).and_return(logger)
+      end
+
+      it 'is the Rails logger' do
+        lineup.config.logger.should be Rails.logger
+      end
     end
   end
 end
