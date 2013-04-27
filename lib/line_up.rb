@@ -19,6 +19,11 @@ module LineUp
     false
   end
 
+  def self.ensure(application, jobclass, *args)
+    if queue_length(application, jobclass) == 0
+      push(application, jobclass, *args)
+    end
+  end
 
   def self.queue_length(application, jobclass)
     redis_for application do |r|

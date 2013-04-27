@@ -132,4 +132,18 @@ describe LineUp do
       end
     end
   end
+
+  describe ".ensure" do
+
+    it "pushes the job if the queue is empty" do
+      lineup.should_receive(:push).with(application, job, *args)
+      lineup.ensure application, job, *args
+    end
+
+    it "does not push the job if the queue already has a job with the same name" do
+      lineup.push application, job, *args
+      lineup.should_not_receive(:push)
+      lineup.ensure application, job, *args
+    end
+  end
 end
