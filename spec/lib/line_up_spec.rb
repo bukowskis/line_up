@@ -82,7 +82,7 @@ describe LineUp do
   end
 
   describe ".queue_length" do
-    
+
     it "returns the length of the given queue in the given application" do
       lineup.push(application, job, 1)
       lineup.push(application, job, 2)
