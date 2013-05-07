@@ -38,7 +38,7 @@ module LineUp
   private
 
   def self.redis_for(application, &block)
-    config.redis.namespace "#{StringExtensions.underscore(application)}:resque", &block
+    config.redis.namespace [StringExtensions.underscore(application), :resque].compact.join(':'), &block
   end
 
   def self.log(caller, application, jobclass, *args)
