@@ -7,6 +7,7 @@ describe LineUp do
   let(:args)        { [123, some: :thing] }
   let(:redis)       { $raw_redis }
   let(:logger)      { mock(:logger) }
+  let(:lineup_job)  { LineUp::Job.new job, *args }
 
   let(:lineup) { LineUp }
 
@@ -124,4 +125,29 @@ describe LineUp do
       lineup.ensure application, job, *args
     end
   end
+
+  describe ".push_throttled" do
+
+    it "pushes same consecutive job just once" do
+      lineup.should_receive(:push).once
+      lineup.push_throttled application, job, *args
+      lineup.push_throttled application, job, *args
+    end
+
+    it "pushes again when previous identical job has expired" do
+      lineup.should_receive(:push).twice
+
+      lineup.push_throttled application, job, *args
+      redis.del "other_app:resque:throttled:#{lineup_job.checksum}"
+      lineup.push_throttled application, job, *args
+    end
+
+    it "stores throttle with configured ttl" do
+      lineup.push_throttled application, job, *args
+      ttl = redis.ttl "other_app:resque:throttled:#{lineup_job.checksum}"
+      ttl.should == lineup.config.recency_ttl
+    end
+
+  end
+
 end
