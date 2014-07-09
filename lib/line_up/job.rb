@@ -1,5 +1,6 @@
 require 'line_up/string_extensions'
 require 'multi_json'
+require 'digest/sha1'
 
 module LineUp
   class Job
@@ -9,6 +10,10 @@ module LineUp
     def initialize(klass, *args)
       @klass = klass
       @args = args
+    end
+
+    def checksum
+      Digest::SHA1.hexdigest(encode)
     end
 
     def encode

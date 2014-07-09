@@ -2,11 +2,12 @@ require 'logger'
 
 module LineUp
   class Configuration
-    attr_accessor :logger, :redis
+    attr_accessor :logger, :redis, :recency_ttl
 
     def initialize(options={})
-      @logger = options[:logger] || default_logger
-      @redis  = options[:redis]  || default_redis
+      @logger      = options[:logger]      || default_logger
+      @redis       = options[:redis]       || default_redis
+      @recency_ttl = options[:recency_ttl] || default_recency_ttl
     end
 
     private
@@ -24,6 +25,11 @@ module LineUp
       return Resque.redis if defined?(Resque)
       Redis::Namespace.new nil
     end
+
+    def default_recency_ttl
+      5
+    end
+
   end
 end
 
