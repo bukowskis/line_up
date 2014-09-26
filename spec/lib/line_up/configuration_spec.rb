@@ -2,8 +2,8 @@ require 'spec_helper'
 
 describe LineUp do
 
-  let(:logger)      { mock(:logger) }
-
+  let(:rails)  { Module.new }
+  let(:logger) { double(:logger) }
   let(:lineup) { LineUp }
 
   describe '.config' do
@@ -12,22 +12,18 @@ describe LineUp do
     end
 
     it 'is an STDOUT logger' do
-      Logger.should_receive(:new).with(STDOUT).and_return logger
-      lineup.config.logger.should be logger
+      expect(Logger).to receive(:new).with(STDOUT).and_return logger
+      expect(lineup.config.logger).to eq(logger)
     end
 
     context 'with Rails' do
       before do
-        ensure_module :Rails
-        Rails.stub!(:logger).and_return(logger)
-      end
-
-      after do
-        Object.send(:remove_const, :Rails)
+        allow(rails).to receive(:logger).and_return(logger)
+        stub_const("Rails", rails)
       end
 
       it 'is the Rails logger' do
-        lineup.config.logger.should be Rails.logger
+        expect(lineup.config.logger).to eq(Rails.logger)
       end
     end
   end
