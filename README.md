@@ -41,11 +41,7 @@ With the setup above, Resque lies in the `myapp:resque`-namespace. So you can en
 This is how you can enqueue a job for another applications:
 
 ```ruby
-if LineUp.push :otherApp, :SomeJob, 12345, some: thing
-# Yey, everything went well
-else
-# The "Trouble"-gem, has been notified and I can process the failure if I like
-end
+LineUp.push :otherApp, :SomeJob, 12345, some: thing
 ```
 
 This will enqueue to `other_app:resque:some_job` with arguments `[12345, { 'some' => 'thing' }]` and make sure that the `other_app:resque:queues` Set references the queue List.
