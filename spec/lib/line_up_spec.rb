@@ -12,13 +12,9 @@ describe LineUp do
   let(:lineup) { LineUp }
 
   describe '.push' do
-    it 'returns true if successful' do
-      expect(lineup.push(application, job, *args)).to eq(true)
-    end
-
     it 'registers the queue' do
       lineup.push application, job, *args
-      queues = expect(redis.smembers('other_app:resque:queues')).to eq(%w{ send_email })
+      expect(redis.smembers('other_app:resque:queues')).to eq(%w{ send_email })
     end
 
     it 'enqueues the job' do
@@ -41,79 +37,19 @@ describe LineUp do
           expect(string).to include(':SendEmail')
           expect(string).to include('[123, {:some=>:thing}]')
         end
-        expect(lineup.push(application, job, *args)).to eq(true)
-      end
-    end
-
-    context 'when the key for the Queue Set is occupied by the wrong data format' do
-      before do
-        redis.set 'other_app:resque:queues', :anything_but_a_list
-      end
-
-      it 'catches the error and returns false' do
-        expect(Trouble).to receive(:notify) do |exception, metadata|
-          expect(exception).to be_instance_of(Redis::CommandError)
-          expect(metadata[:code]).to eq(:enqueue_failed)
-          expect(metadata[:application]).to eq(':otherApp')
-          expect(metadata[:job]).to eq(':SendEmail')
-          expect(metadata[:args]).to eq('[123, {:some=>:thing}]')
-          expect(metadata[:caller]).to include('line_up_spec.rb')
-        end
-        expect(lineup.push(application, job, *args)).to eq(false)
-      end
-    end
-
-    context 'when the key for the List Job Queue is occupied by the wrong data format' do
-      before do
-        redis.set 'other_app:resque:queue:send_email', :anything_but_a_list
-      end
-
-      it 'catches the error and returns false' do
-        expect(Trouble).to receive(:notify) do |exception, metadata|
-          expect(exception).to be_instance_of Redis::CommandError
-          expect(metadata[:code]).to eq(:enqueue_failed)
-          expect(metadata[:application]).to eq(':otherApp')
-          expect(metadata[:job]).to eq(':SendEmail')
-          expect(metadata[:args]).to eq('[123, {:some=>:thing}]')
-          expect(metadata[:caller]).to include('line_up_spec.rb')
-        end
-        expect(lineup.push(application, job, *args)).to eq(false)
       end
     end
   end
 
   describe ".queue_length" do
-
     it "returns the length of the given queue in the given application" do
       lineup.push(application, job, 1)
       lineup.push(application, job, 2)
       expect(lineup.queue_length(application, job)).to eq(2)
     end
-
-    context 'when the key for the List Job Queue is occupied by the wrong data format' do
-      before do
-        redis.set 'other_app:resque:queue:send_email', :anything_but_a_list
-      end
-
-      it 'logs the error' do
-        expect(Trouble).to receive(:notify) do |exception, metadata|
-          expect(exception).to be_instance_of Redis::CommandError
-          expect(metadata[:code]).to eq(:getting_queue_length_failed)
-          expect(metadata[:application]).to eq(':otherApp')
-          expect(metadata[:job]).to eq(':SendEmail')
-          expect(metadata[:caller]).to include('line_up_spec.rb')
-        end
-        lineup.queue_length(application, job)
-      end
-
-      it "returns false" do
-        expect(lineup.queue_length(application, job)).to eq(false)
-      end
-    end
   end
 
   describe ".ensure" do
-
     it "pushes the job if the queue is empty" do
       expect(lineup).to receive(:push).with(application, job, *args)
       lineup.ensure application, job, *args
@@ -127,7 +63,6 @@ describe LineUp do
   end
 
   describe ".push_throttled" do
-
     it "pushes same consecutive job just once" do
       expect(lineup).to receive(:push).once
       lineup.push_throttled application, job, *args
@@ -147,7 +82,5 @@ describe LineUp do
       ttl = redis.ttl "other_app:resque:throttled:#{lineup_job.checksum}"
       expect(ttl).to eq(lineup.config.recency_ttl)
     end
-
   end
-
 end

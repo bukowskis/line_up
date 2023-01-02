@@ -1,5 +1,3 @@
-require 'trouble'
-
 require 'line_up/configuration'
 require 'line_up/job'
 
@@ -13,10 +11,6 @@ module LineUp
       redis.rpush "queue:#{job.queue_name}", job.encode
     end
     log caller, application, jobclass, *args
-    true
-  rescue Exception => exception
-    Trouble.notify exception, caller: caller[1], message: "LineUp could not enqueue a Job", code: :enqueue_failed, redis: config.redis.inspect, application: application.inspect, job: jobclass.inspect, args: args.inspect
-    false
   end
 
   def self.ensure(application, jobclass, *args)
@@ -38,9 +32,6 @@ module LineUp
       job = Job.new jobclass
       return r.llen "queue:#{job.queue_name}"
     end
-  rescue Exception => e
-    Trouble.notify e, caller: caller[1], message: "LineUp could not get the queue length", code: :getting_queue_length_failed, redis: config.redis.inspect, application: application.inspect, job: jobclass.inspect
-    false
   end
 
   private
@@ -66,5 +57,4 @@ module LineUp
     return unless config.logger
     config.logger.debug "LINEUP ENQUEUED JOB #{jobclass.inspect} for #{application.inspect} at #{caller.first} with arguments #{args.inspect}"
   end
-
 end
