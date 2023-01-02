@@ -37,6 +37,7 @@ describe LineUp do
           expect(string).to include(':SendEmail')
           expect(string).to include('[123, {:some=>:thing}]')
         end
+        lineup.push application, job, *args
       end
     end
   end
@@ -59,28 +60,6 @@ describe LineUp do
       lineup.push application, job, *args
       expect(lineup).not_to receive(:push)
       lineup.ensure application, job, *args
-    end
-  end
-
-  describe ".push_throttled" do
-    it "pushes same consecutive job just once" do
-      expect(lineup).to receive(:push).once
-      lineup.push_throttled application, job, *args
-      lineup.push_throttled application, job, *args
-    end
-
-    it "pushes again when previous identical job has expired" do
-      expect(lineup).to receive(:push).twice
-
-      lineup.push_throttled application, job, *args
-      redis.del "other_app:resque:throttled:#{lineup_job.checksum}"
-      lineup.push_throttled application, job, *args
-    end
-
-    it "stores throttle with configured ttl" do
-      lineup.push_throttled application, job, *args
-      ttl = redis.ttl "other_app:resque:throttled:#{lineup_job.checksum}"
-      expect(ttl).to eq(lineup.config.recency_ttl)
     end
   end
 end

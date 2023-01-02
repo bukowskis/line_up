@@ -19,14 +19,6 @@ module LineUp
     end
   end
 
-  def self.push_throttled(application, jobclass, *args)
-    job = Job.new jobclass, *args
-    unless recent? application, job
-      push(application, jobclass, *args)
-      recent! application, job
-    end
-  end
-
   def self.queue_length(application, jobclass)
     redis_for application do |r|
       job = Job.new jobclass
@@ -35,19 +27,6 @@ module LineUp
   end
 
   private
-
-  def self.recent?(application, job)
-    redis_for application do |r|
-      return true if r.exists "throttled:#{job.checksum}"
-    end
-    false
-  end
-
-  def self.recent!(application, job)
-    redis_for application do |r|
-      r.setex "throttled:#{job.checksum}", config.recency_ttl, "true"
-    end
-  end
 
   def self.redis_for(application, &block)
     config.redis.namespace [StringExtensions.underscore(application), :resque].compact.join(':'), &block

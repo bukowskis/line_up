@@ -13,5 +13,4 @@ RSpec.configure do |config|
     $raw_redis.flushdb
     LineUp.reset!
   end
-
 end

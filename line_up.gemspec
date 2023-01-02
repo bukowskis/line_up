@@ -20,6 +20,4 @@ Gem::Specification.new do |spec|
   spec.add_dependency('redis-namespace', '>= 1.3.0')
 
   spec.add_development_dependency('rspec')
-  spec.add_development_dependency('guard-rspec')
-  spec.add_development_dependency('rb-fsevent')
 end
